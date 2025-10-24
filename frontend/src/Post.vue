@@ -1,38 +1,33 @@
-<template>
-  <div class="post-content" v-if="post">
-    <h1>{{ post.title }}</h1>
-    <p>{{ post.content }}</p>
-    <router-link to="/" class="back-link">Back to Home</router-link>
-  </div>
-
-  <div v-else class="loading">
-    <p>Loading post...</p>
-  </div>
-</template>
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { usePostStore } from './stores/postStore'
 
 const route = useRoute()
 const router = useRouter()
-const slug = route.params.slug
-
-const post = ref(null)
-const API_BASE = '/api'
+const postStore = usePostStore()
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${API_BASE}/post/${slug}/edit`)
-    if (!res.ok) throw new Error('Post not found')
-    const data = await res.json()
-    post.value = data.post
+    await postStore.fetchOne(route.params.slug)
   } catch (err) {
-    alert('Error loading post: ' + err.message)
+    alert('Erreur : ' + err.message)
     router.push('/')
   }
 })
 </script>
+
+<template>
+  <div v-if="postStore.currentPost" class="post-content">
+    <h1>{{ postStore.currentPost.title }}</h1>
+    <p>{{ postStore.currentPost.content }}</p>
+    <router-link to="/" class="back-link">← Retour</router-link>
+  </div>
+
+  <div v-else class="loading">
+    <p>Chargement...</p>
+  </div>
+</template>
 
 <style scoped>
 .post-content {

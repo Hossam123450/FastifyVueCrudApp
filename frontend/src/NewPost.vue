@@ -27,35 +27,19 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { usePostStore } from './stores/postStore'
 
 const router = useRouter()
+const postStore = usePostStore()
 
-const form = ref({
-  title: '',
-  content: ''
-})
-
-const API_BASE = '/api'
+const form = ref({ title: '', content: '' })
 
 async function submitForm() {
   try {
-    const res = await fetch(`${API_BASE}/post`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
-    })
-
-    if (!res.ok) {
-      const error = await res.text()
-      throw new Error(error)
-    }
-
-    const data = await res.json()
-    router.push(`/post/${data.slug}`) // Redirige vers la page du nouveau post
+    const newPost = await postStore.createPost(form.value)
+    router.push(`/post/${newPost.slug}`)
   } catch (err) {
-    alert('Failed to create post: ' + err.message)
+    alert(err.message)
   }
 }
 </script>

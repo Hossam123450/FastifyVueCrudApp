@@ -23,63 +23,35 @@
     <router-link to="/" class="back-link">Back to Home</router-link>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { usePostStore } from './stores/postStore'
 
 const route = useRoute()
 const router = useRouter()
+const postStore = usePostStore()
+
 const slug = route.params.slug
+const form = ref({ title: '', content: '' })
 
-const form = ref({
-  title: '',
-  content: ''
-})
-
-const API_BASE = '/api' // Utilise le proxy Vite
-
-// Charger les données existantes
 onMounted(async () => {
-  try {
-    const res = await fetch(`${API_BASE}/post/${slug}`)
-    if (!res.ok) throw new Error('Post not found')
-    const data = await res.json()
-    form.value.title = data.post.title
-    form.value.content = data.post.content
-  } catch (err) {
-    alert('Error loading post: ' + err.message)
-    router.push('/') // Retour à l'accueil en cas d’erreur
+  await postStore.fetchOne(slug)
+  form.value = {
+    title: postStore.currentPost.title,
+    content: postStore.currentPost.content
   }
 })
 
-// Envoyer les modifications
 async function submitForm() {
   try {
-    const res = await fetch(`${API_BASE}/post/${slug}/edit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
-    })
-
-    if (!res.ok) {
-      const errorText = await res.text()
-      throw new Error(errorText)
-    }
-
-    const data = await res.json()
-    // Redirection vers la nouvelle URL avec le slug mis à jour
-    router.push(`/post/${data.slug}`)
-
+    const updated = await postStore.updatePost(slug, form.value)
+    router.push(`/post/${updated.slug}`)
   } catch (err) {
-    alert('Failed to update post: ' + err.message)
+    alert(err.message)
   }
 }
-
 </script>
-
 <style scoped>
 .edit-post-container {
   max-width: 600px;
